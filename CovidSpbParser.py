@@ -29,24 +29,23 @@ def parse_and_display(filename):
 
     msgParser = MsgParser()
     for (msg, _) in list:
-        m_cases = msgParser.parse_cases(msg)
-        m_cured = msgParser.parse_cured_died(msg)
-        if m_cases and m_cured:
-            print("Date:{}, New cases:{}, total cases:{}, Tested:{}, cured:{}, died:{}".format(m_cases["date"],
-                                                                                        m_cases["new_cases"],
-                                                                                        m_cases["total_cases"],
-                                                                                        m_cases["tested"],
-                                                                                        m_cured["cured"],
-                                                                                        m_cured["died"]))
+        parsed_items = msgParser.parse(msg)
+        if parsed_items:
+            print("Date:{}, New cases:{}, total cases:{}, Tested:{}, cured:{}, died:{}".format(parsed_items["date"],
+                                                                                        parsed_items["new_cases"],
+                                                                                        parsed_items["total_cases"],
+                                                                                        parsed_items["tested"],
+                                                                                        parsed_items["cured"],
+                                                                                        parsed_items["died"]))
         else:
             print("Can't parse: " + msg)
 
-    parsed_items = [(msgParser.parse_cases(msg), msgParser.parse_cured_died(msg), d) for (msg, d) in reversed(list)]
+    parsed_items = [(msgParser.parse(msg), d) for (msg, d) in reversed(list)]
     df = pd.DataFrame(
-        data=[[(du_parser.parse(date).date() + dt.timedelta(days=-1)).strftime("%d-%m-%Y"), m_cases["date"],
-               m_cases["new_cases"], m_cases["total_cases"], m_cases["tested"], m_cured["cured"], m_cured["died"]] for
-              (m_cases, m_cured, date)
-              in parsed_items if m_cases and m_cured],
+        data=[[(du_parser.parse(date).date() + dt.timedelta(days=-1)).strftime("%d-%m-%Y"), items["date"],
+               items["new_cases"], items["total_cases"], items["tested"], items["cured"], items["died"]] for
+              (items, date)
+              in parsed_items if items],
         columns=["MsgDate", "ReportDate", "NewCases", "TotalCases", "Tested", "Cured", "Died"]
     ).apply(pd.to_numeric, errors='ignore')
     df["NewCasesRatio"] = df["NewCases"] / df["Tested"]
