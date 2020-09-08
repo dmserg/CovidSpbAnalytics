@@ -36,10 +36,6 @@ class MsgParser:
     def __parse__(msg, rx, group_names):
         m = rx.search(msg)
         if m:
-            res = {}
-            for col in group_names:
-                res[col] = m.group(col)
-
-            return res
+            return {col: m.group(col) for col in group_names}
         else:
             return None

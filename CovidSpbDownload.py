@@ -1,15 +1,7 @@
 import configparser
 import json
-
 from telethon.sync import TelegramClient
-from telethon import connection
-
-# для корректного переноса времени сообщений в json
 from datetime import date, datetime
-
-# классы для работы с каналами
-from telethon.tl.functions.channels import GetParticipantsRequest
-from telethon.tl.types import ChannelParticipantsSearch
 
 # класс для работы с сообщениями
 from telethon.tl.functions.messages import GetHistoryRequest
@@ -20,7 +12,6 @@ async def dump_all_messages(client, channel, filename):
     limit_msg = 100  # максимальное число записей, передаваемых за один раз
 
     all_messages = []  # список всех сообщений
-    total_messages = 0
     total_count_limit = 0  # поменяйте это значение, если вам нужны не все сообщения
 
     class DateTimeEncoder(json.JSONEncoder):
@@ -76,4 +67,4 @@ def download_covid_data(filename):
 
 
 if __name__ == '__main__':
-  main()
+    main()

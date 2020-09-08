@@ -50,6 +50,7 @@ def parse_and_display(filename):
     ).apply(pd.to_numeric, errors='ignore')
     df["NewCasesRatio"] = df["NewCases"] / df["Tested"]
     df["ActiveCases"] = df["TotalCases"] - df["Cured"] - df["Died"]
+    df["CuredPerDay"] = df["Cured"].diff()
     df["MsgDateLabel"] = [a if ind % 2 != len(df.index) % 2 else "" for ind, a in enumerate(df["MsgDate"])]
 
     plot_covid_charts_new_cases(df)
@@ -82,6 +83,7 @@ def plot_covid_charts_new_cases(df):
     new_cases_fig = plt.figure()
     new_cases_plot = new_cases_fig.add_subplot(111)
     lns_new_cases = new_cases_plot.bar(df["MsgDate"], df["NewCases"], label='New Cases', color='#1f77b4')
+    #lns_cured_per_day = new_cases_plot.plot(df["MsgDate"], df["CuredPerDay"], label='Cured per Day', color='#D9514EFF')
     new_cases_ratio_plot = new_cases_plot.twinx()
     lns_new_cases_ratio = new_cases_ratio_plot.bar(df["MsgDate"], df["NewCasesRatio"], label='New Cases Ratio', color='#ff7f0e')
     new_cases_plot.legend((lns_new_cases, lns_new_cases_ratio),
