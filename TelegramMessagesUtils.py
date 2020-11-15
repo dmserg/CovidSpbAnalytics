@@ -1,12 +1,18 @@
-import configparser
-import json
 from telethon.sync import TelegramClient
-from datetime import date, datetime
-
+import json
 # класс для работы с сообщениями
 from telethon.tl.functions.messages import GetHistoryRequest
+from datetime import date, datetime
 
-async def dump_all_messages(client, channel, filename):
+def get_telegram_client(config):
+    api_id = config['Telegram']['api_id']
+    api_hash = config['Telegram']['api_hash']
+    username = config['Telegram']['username']
+    client = TelegramClient(username, api_id, api_hash)
+    client.start()
+    return client
+
+async def __dump_all_messages(client, channel, filename):
     """Записывает json-файл с информацией о всех сообщениях канала/чата"""
     offset_msg = 0  # номер записи, с которой начинается считывание
     limit_msg = 100  # максимальное число записей, передаваемых за один раз
@@ -44,27 +50,7 @@ async def dump_all_messages(client, channel, filename):
     with open(filename, 'w', encoding='utf8') as outfile:
         json.dump(all_messages, outfile, ensure_ascii=False, cls=DateTimeEncoder)
 
-async def dump_messages(client, filename):
-    url = "https://t.me/koronavirusspb"
+async def dump_messages(client, filename, url):
+    #url = "https://t.me/koronavirusspb"
     channel = await client.get_entity(url)
-    await dump_all_messages(client, channel, filename)
-
-def main():
-    download_covid_data('channel_messages.json')
-
-def download_covid_data(filename):
-    # Считываем учетные данные
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-    # Присваиваем значения внутренним переменным
-    api_id = config['Telegram']['api_id']
-    api_hash = config['Telegram']['api_hash']
-    username = config['Telegram']['username']
-    client = TelegramClient(username, api_id, api_hash)
-    client.start()
-    with client:
-        client.loop.run_until_complete(dump_messages(client, filename))
-
-
-if __name__ == '__main__':
-    main()
+    await __dump_all_messages(client, channel, filename)

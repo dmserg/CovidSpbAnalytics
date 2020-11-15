@@ -1,5 +1,5 @@
-from CovidSpbParser import parse_and_display
-from CovidSpbDownload import download_covid_data
+from SpbCovidParser import parse_and_display
+from SpbCovidDownload import download_covid_data
 
 def main():
     download_covid_data('channel_messages.json')

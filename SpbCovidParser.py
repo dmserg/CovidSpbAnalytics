@@ -1,13 +1,14 @@
 import argparse
 import json
 import re
-from MsgParser import MsgParser
+from SpbCovidMsgParser import SpbCovidMsgParser
 import pandas as pd
 import datetime as dt
 import dateutil.parser as du_parser
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import matplotlib as mpl
+from datetime import datetime
 
 
 def main():
@@ -16,7 +17,6 @@ def main():
     args = parser.parse_args()
 
     parse_and_display(args.filename)
-    # df.to_csv("covid_parsed.csv")
 
 
 def parse_and_display(filename):
@@ -27,7 +27,7 @@ def parse_and_display(filename):
     list = [(msg["message"], msg["date"]) for msg in msg_dict if
             msg["_"] and msg["_"] == "Message" and msgFilter.match(msg["message"])]
 
-    msgParser = MsgParser()
+    msgParser = SpbCovidMsgParser()
     for (msg, _) in list:
         parsed_items = msgParser.parse(msg)
         if parsed_items:
@@ -40,7 +40,7 @@ def parse_and_display(filename):
         else:
             print("Can't parse: " + msg)
 
-    parsed_items = [(msgParser.parse(msg), d) for (msg, d) in reversed(list)]
+    parsed_items = [(msgParser.parse(msg), msgDate) for (msg, msgDate) in reversed(list)]
     df = pd.DataFrame(
         data=[[(du_parser.parse(date).date() + dt.timedelta(days=-1)).strftime("%d-%m-%Y"), items["date"],
                items["new_cases"], items["total_cases"], items["tested"], items["cured"], items["died"]] for
@@ -51,13 +51,34 @@ def parse_and_display(filename):
     df["NewCasesRatio"] = df["NewCases"] / df["Tested"]
     df["ActiveCases"] = df["TotalCases"] - df["Cured"] - df["Died"]
     df["CuredPerDay"] = df["Cured"].diff()
+    df["DiedPerDay"] = df["Died"].diff()
     df["MsgDateLabel"] = [a if ind % 2 != len(df.index) % 2 else "" for ind, a in enumerate(df["MsgDate"])]
+    df["MsgDateWeekNum"] = [datetime.strptime(d, '%d-%m-%Y').isocalendar()[1] for d in df["MsgDate"]]
+
+    aggregated_result = df.groupby("MsgDateWeekNum")[["NewCases", "Tested"]].sum()
+    aggregated_result["NewCasesRatio"] = aggregated_result["NewCases"] / aggregated_result["Tested"]
+
+    df.to_csv("spb_covid_parsed.csv")
+    aggregated_result.to_csv("spb_aggregated.csv")
 
     plot_covid_charts_new_cases(df)
     plot_covid_charts_active_cases(df)
+    plot_covid_charts_cured_vs_died(df)
 
     plt.show()
 
+def plot_covid_charts_cured_vs_died(df):
+    mpl.style.use('seaborn')
+    rc('mathtext', default='regular')
+
+    cured_fig = plt.figure()
+    cured_fig.add_subplot(111)
+
+    cured_per_day_ax = df["CuredPerDay"].plot(x="MsgDate", color='#2DA8D8FF', kind='bar', label="Cured per day")
+    df["DiedPerDay"].plot(x="MsgDate", ax=cured_per_day_ax, color='#D9514EFF', kind='bar', label="Died per day")
+    cured_per_day_ax.set_xticklabels(df["MsgDateLabel"], rotation='vertical')
+    cured_per_day_ax.legend()
+    plt.title("Covid-19 Spb Cured vs Died per Day")
 
 def plot_covid_charts_active_cases(df):
     mpl.style.use('seaborn')
@@ -75,6 +96,8 @@ def plot_covid_charts_active_cases(df):
 
     total_cases_ax.legend()
     plt.title("Covid-19 Spb Cases")
+
+    #plt.savefig("ActiveCases.png", dpi=190)
 
 
 def plot_covid_charts_new_cases(df):
@@ -94,6 +117,7 @@ def plot_covid_charts_new_cases(df):
     new_cases_plot.set_xticklabels(df["MsgDateLabel"], rotation='vertical')
     plt.title("Covid-19 Spb New Cases")
 
+    #plt.savefig("NewCases.png", dpi=190)
 
 
 if __name__ == '__main__':

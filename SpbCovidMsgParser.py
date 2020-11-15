@@ -1,13 +1,13 @@
 import re
 
 
-class MsgParser:
+class SpbCovidMsgParser:
     def __init__(self):
         self.p_cases = re.compile(
             r'.*Картина дня (?P<date>\d+ \w+).* (?P<new_cases>\d+) новы.*Петербурге\s+(?P<total_cases>\d+).*', re.DOTALL | re.IGNORECASE)
 
         self.p_tested = re.compile(
-            r'.*коронавирус[^0-9]+(?P<tested>\d+) +человек.*', re.DOTALL | re.IGNORECASE)
+            r'.*коронавирус[^0-9]+(?P<tested>\d+)\s*человек.*', re.DOTALL | re.IGNORECASE)
 
         self.p_cured_died = re.compile(
             r'.*[кончались|мерло|мерших][^0-9]+(?P<died>\d+)че.*здоровел[^0-9]+(?P<cured>\d+)че.*',
