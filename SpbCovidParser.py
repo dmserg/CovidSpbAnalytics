@@ -10,16 +10,17 @@ from matplotlib import rc
 import matplotlib as mpl
 from datetime import datetime
 
+SKIP_LABELS = 10
 
 def main():
     parser = argparse.ArgumentParser(description='Process JSON with covid messages.')
     parser.add_argument('--filename', help='Messages JSON dump file')
     args = parser.parse_args()
 
-    parse_and_display(args.filename)
+    parse_covid_data(args.filename)
 
 
-def parse_and_display(filename):
+def parse_covid_data(filename):
     with open(filename, 'r', encoding="utf8") as f:
         msg_dict = json.load(f)
 
@@ -46,28 +47,26 @@ def parse_and_display(filename):
                items["new_cases"], items["total_cases"], items["tested"], items["cured"], items["died"]] for
               (items, date)
               in parsed_items if items],
-        columns=["MsgDate", "ReportDate", "NewCases", "TotalCases", "Tested", "Cured", "Died"]
+        columns=["MsgDate", "ReportDate", "NewCases", "TotalCases", "TestedPerDay", "Cured", "Died"]
     ).apply(pd.to_numeric, errors='ignore')
-    df["NewCasesRatio"] = df["NewCases"] / df["Tested"]
+    cleanup_covid_data(df)
+
+    df["NewCasesRatio"] = df["NewCases"] / df["TestedPerDay"]
     df["ActiveCases"] = df["TotalCases"] - df["Cured"] - df["Died"]
     df["CuredPerDay"] = df["Cured"].diff()
     df["DiedPerDay"] = df["Died"].diff()
-    df["MsgDateLabel"] = [a if ind % 2 != len(df.index) % 2 else "" for ind, a in enumerate(df["MsgDate"])]
+    df["MsgDateLabel"] = [a if ind % SKIP_LABELS == 0 or ind==len(df["MsgDate"])-1 else "" for ind, a in enumerate(df["MsgDate"])]
     df["MsgDateWeekNum"] = [datetime.strptime(d, '%d-%m-%Y').isocalendar()[1] for d in df["MsgDate"]]
 
-    aggregated_result = df.groupby("MsgDateWeekNum")[["NewCases", "Tested"]].sum()
-    aggregated_result["NewCasesRatio"] = aggregated_result["NewCases"] / aggregated_result["Tested"]
+    aggregated_result = df.groupby("MsgDateWeekNum")[["NewCases", "TestedPerDay"]].sum()
+    aggregated_result["NewCasesRatio"] = aggregated_result["NewCases"] / aggregated_result["TestedPerDay"]
 
-    df.to_csv("spb_covid_parsed.csv")
-    aggregated_result.to_csv("spb_aggregated.csv")
+    return df, aggregated_result
 
-    plot_covid_charts_new_cases(df)
-    plot_covid_charts_active_cases(df)
-    plot_covid_charts_cured_vs_died(df)
+def cleanup_covid_data(df):
+    df.loc[df["MsgDate"] == "01-01-2021", ["TotalCases"]] = 249612
 
-    plt.show()
-
-def plot_covid_charts_cured_vs_died(df):
+def plot_covid_charts_cured_vs_newcases(df):
     mpl.style.use('seaborn')
     rc('mathtext', default='regular')
 
@@ -75,10 +74,10 @@ def plot_covid_charts_cured_vs_died(df):
     cured_fig.add_subplot(111)
 
     cured_per_day_ax = df["CuredPerDay"].plot(x="MsgDate", color='#2DA8D8FF', kind='bar', label="Cured per day")
-    df["DiedPerDay"].plot(x="MsgDate", ax=cured_per_day_ax, color='#D9514EFF', kind='bar', label="Died per day")
+    df["NewCases"].plot(x="MsgDate", ax=cured_per_day_ax, color='#D9514EFF', kind='bar', label="New cases per day")
     cured_per_day_ax.set_xticklabels(df["MsgDateLabel"], rotation='vertical')
     cured_per_day_ax.legend()
-    plt.title("Covid-19 Spb Cured vs Died per Day")
+    plt.title("Covid-19 Spb Cured vs New Cases per Day")
 
 def plot_covid_charts_active_cases(df):
     mpl.style.use('seaborn')
@@ -89,7 +88,7 @@ def plot_covid_charts_active_cases(df):
 
     total_cases_ax = df["TotalCases"].plot(x="MsgDate", color='#2DA8D8FF', kind='bar', label="Total Cases")
     df["ActiveCases"].plot(x="MsgDate", ax=total_cases_ax, color='#D9514EFF', kind='bar', label="Active Cases")
-    df["Tested"].plot(x=df.index, color='#2A2B2DFF', label="Tested per Day", grid=True, linestyle='dotted', marker='o')
+    df["TestedPerDay"].plot(x=df.index, color='#2A2B2DFF', label="Tested per Day", grid=True, linestyle='-')
     df["Died"].plot(x=df.index, color='brown', label="Died Total", grid=True, linestyle='--', marker='+')
     df["Cured"].plot(x=df.index, color='green', label="Cured Total", grid=True, linestyle='--', marker='+')
     total_cases_ax.set_xticklabels(df["MsgDateLabel"], rotation='vertical')

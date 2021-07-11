@@ -72,6 +72,18 @@ ___
 
 * - по одной из смертей проводится проверка."""
 
+
+        self.msg_dec15 = """Картина дня 15 декабря
+ 
+➕ Зафиксировано 3758 новых случаев заражения коронавирусной инфекцией.
+
+📉 Всего с начала пандемии в Санкт-Петербурге  185780 случаев заражения COVID-19. 
+Скончались 6529 человек. Выздоровело 105665 человек.
+
+🔬 За последние сутки в Петербурге обследовали на коронавирус 35 593 человека.
+
+🏠 Под медицинским наблюдением находится 1782 человека. Из них 15 - в обсерваторе, 1274 - контактные, 493 - на самоизоляции."""
+
     def test_apr6_cases(self):
         p = SpbCovidMsgParser()
         result = p.parse_cases(self.msg_apr6)
@@ -163,6 +175,24 @@ ___
         self.assertEqual("78", result["cured"])
         self.assertEqual("4", result["died"])
 
+
+    def test_dec15_parse(self):
+        p = SpbCovidMsgParser()
+        result = p.parse(self.msg_dec15)
+        self.assertEqual("15 декабря", result["date"])
+        self.assertEqual("3758", result["new_cases"])
+        self.assertEqual("185780", result["total_cases"])
+        self.assertEqual("6529", result["died"])
+        self.assertEqual("105665", result["cured"])
+        self.assertEqual("35593", result["tested"])
+
+    def test_regex_replace(self):
+        def space_repl(match):
+            return match.group().replace(" ", "")
+
+        import re
+        str = re.sub(r"\d+( )\d+", space_repl, "aaa 444 33 sss")
+        self.assertEqual("aaa 44433 sss", str)
 
 if __name__ == '__main__':
     unittest.main()
