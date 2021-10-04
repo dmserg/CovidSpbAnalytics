@@ -7,7 +7,7 @@ from SpbCovidDownload import download_covid_data
 def main():
     parser = argparse.ArgumentParser(description='Parse and chart covid data from Spb Telegram Channel')
     parser.add_argument('-skip_download', help='Skip download', action='store_true')
-    parser.add_argument('-no_charts', help='Don\'t display charts')
+    parser.add_argument('-no_charts', help='Don\'t display charts', action='store_true')
     args = parser.parse_args()
 
     if not args.skip_download:

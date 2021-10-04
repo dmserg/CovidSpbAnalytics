@@ -84,11 +84,23 @@ ___
 
 🏠 Под медицинским наблюдением находится 1782 человека. Из них 15 - в обсерваторе, 1274 - контактные, 493 - на самоизоляции."""
 
-    def test_apr6_cases(self):
+        self.msg_aug14_21 = """Картина дня 14 августа
+🦠 Зафиксировано 1823 новых случая заражения коронавирусной инфекцией.
+
+За последние сутки в Петербурге:
+➖выздоровели 1899 человек;
+➖скончались 48 человек;
+➖прошли обследование на коронавирус 25 135 человек."""
+
+    def test_apr6_new_cases(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cases(self.msg_apr6)
+        result = p.parse_new_cases(self.msg_apr6)
         self.assertEqual("6 АПРЕЛЯ", result["date"])
         self.assertEqual("69", result["new_cases"])
+
+    def test_apr6_total_cases(self):
+        p = SpbCovidMsgParser()
+        result = p.parse_total_cases(self.msg_apr6)
         self.assertEqual("295", result["total_cases"])
 
     def test_apr6_tested(self):
@@ -96,24 +108,30 @@ ___
         result = p.parse_tested(self.msg_apr6)
         self.assertEqual("6957", result["tested"])
 
-    def test_apr6_cured_died(self):
+    def test_apr6_cured(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cured_died(self.msg_apr6)
+        result = p.parse_cured(self.msg_apr6)
         self.assertEqual("36", result["cured"])
+
+    def test_apr6_died(self):
+        p = SpbCovidMsgParser()
+        result = p.parse_died(self.msg_apr6)
         self.assertEqual("3", result["died"])
 
-    def test_nov11_cases(self):
+    def test_nov11_new_cases(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cases(self.msg_nov8)
-
+        result = p.parse_new_cases(self.msg_nov8)
         self.assertEqual("1403", result["new_cases"])
 
-    def test_nov8_cases(self):
+    def test_nov8_new_cases(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cases(self.msg_nov8)
-
+        result = p.parse_new_cases(self.msg_nov8)
         self.assertEqual("8 ноября", result["date"])
         self.assertEqual("1403", result["new_cases"])
+
+    def test_nov8_total_cases(self):
+        p = SpbCovidMsgParser()
+        result = p.parse_total_cases(self.msg_nov8)
         self.assertEqual("71426", result["total_cases"])
 
     def test_nov8_tested(self):
@@ -121,45 +139,53 @@ ___
         result = p.parse_tested(self.msg_nov8)
         self.assertEqual("25651", result["tested"])
 
-
     def test_nov8_cured_died(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cured_died(self.msg_nov8)
-        self.assertEqual("43501", result["cured"])
-        self.assertEqual("4181", result["died"])
+        result_c = p.parse_cured(self.msg_nov8)
+        result_d = p.parse_died(self.msg_nov8)
+        self.assertEqual("43501", result_c["cured"])
+        self.assertEqual("4181", result_d["died"])
 
-    def test_aug10_cases(self):
+    def test_aug10_new_cases(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cases(self.msg_aug10)
-
+        result = p.parse_new_cases(self.msg_aug10)
         self.assertEqual("157", result["new_cases"])
 
-
-    def test_apr12_cases(self):
+    def test_apr12_new_cases(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cases(self.msg_apr12)
+        result = p.parse_new_cases(self.msg_apr12)
         self.assertEqual("12 АПРЕЛЯ", result["date"])
         self.assertEqual("121", result["new_cases"])
+
+    def test_apr12_total_cases(self):
+        p = SpbCovidMsgParser()
+        result = p.parse_total_cases(self.msg_apr12)
         self.assertEqual("678", result["total_cases"])
 
     def test_apr12_cured_died(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cured_died(self.msg_apr12)
-        self.assertEqual("78", result["cured"])
-        self.assertEqual("4", result["died"])
+        result_c = p.parse_cured(self.msg_apr12)
+        result_d = p.parse_died(self.msg_apr12)
+        self.assertEqual("78", result_c["cured"])
+        self.assertEqual("4", result_d["died"])
 
-    def test_apr22_cases(self):
+    def test_apr22_new_cases(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cases(self.msg_apr22)
+        result = p.parse_new_cases(self.msg_apr22)
         self.assertEqual("22 АПРЕЛЯ", result["date"])
         self.assertEqual("191", result["new_cases"])
+
+    def test_apr22_total_cases(self):
+        p = SpbCovidMsgParser()
+        result = p.parse_total_cases(self.msg_apr22)
         self.assertEqual("2458", result["total_cases"])
 
     def test_apr22_cured_died(self):
         p = SpbCovidMsgParser()
-        result = p.parse_cured_died(self.msg_apr22)
-        self.assertEqual("368", result["cured"])
-        self.assertEqual("17", result["died"])
+        result_c = p.parse_cured(self.msg_apr22)
+        result_d = p.parse_died(self.msg_apr22)
+        self.assertEqual("368", result_c["cured"])
+        self.assertEqual("17", result_d["died"])
 
     def test_apr22_tested(self):
         p = SpbCovidMsgParser()
@@ -185,6 +211,15 @@ ___
         self.assertEqual("6529", result["died"])
         self.assertEqual("105665", result["cured"])
         self.assertEqual("35593", result["tested"])
+
+    def test_aug14_21_parse(self):
+        p = SpbCovidMsgParser()
+        result = p.parse(self.msg_aug14_21)
+        self.assertEqual("14 августа", result["date"])
+        self.assertEqual("1823", result["new_cases"])
+        self.assertEqual("48", result["died_per_day"])
+        self.assertEqual("1899", result["cured_per_day"])
+        self.assertEqual("25135", result["tested"])
 
     def test_regex_replace(self):
         def space_repl(match):
