@@ -55,7 +55,6 @@ def parse_covid_data(filename):
     cleanup_covid_data(df)
 
     df["NewCasesRatio"] = df["NewCases"] / df["TestedPerDay"]
-    df[df["TotalCases"].isnull()]["TotalCases"] = 0
     df["ActiveCases"] = df["TotalCases"] - df["Cured"] - df["Died"]
     df["CuredPerDay"] = df["Cured"].diff()
     df["DiedPerDay"] = df["Died"].diff()
@@ -75,6 +74,15 @@ def cleanup_covid_data(df):
     df.loc[df["MsgDate"] == "06-04-2020", ["Cured"]] = 36
     df.loc[df["MsgDate"] == "06-04-2020", ["TestedPerDay"]] = 6957
     df.loc[df["MsgDate"] == "06-04-2020", ["TotalCases"]] = 295
+
+    # Fix missing data (data format change since 2021-08-01)
+    for i, row in df.iterrows():
+        if pd.isnull(row["TotalCases"]):
+            df.at[i, "TotalCases"] = df.at[i-1, "TotalCases"] + row["NewCases"]
+        if pd.isnull(row["Cured"]):
+            df.at[i, "Cured"] = df.at[i - 1, "Cured"] + row["CuredPerDay"]
+        if pd.isnull(row["Died"]):
+            df.at[i, "Died"] = df.at[i - 1, "Died"] + row["DiedPerDay"]
 
 def plot_covid_charts_cured_vs_newcases(df):
     mpl.style.use('seaborn')
